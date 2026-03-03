@@ -8,468 +8,561 @@
     <script src="js/miniChart.js"></script>
 </head>
 <body>
-    <!-- SIDEBAR -->
-    <nav id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
+
+    <!-- ==================== AUTH SCREEN ==================== -->
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-container">
+            <div class="auth-logo">
                 <span class="logo-icon">&#9881;</span>
-                <span class="logo-text">MotoFlip</span>
+                <span class="auth-title">MotoFlip</span>
             </div>
-        </div>
-        <ul class="nav-links">
-            <li><a href="#" class="nav-link active" data-section="dashboard">
-                <span class="nav-icon">&#9632;</span> Dashboard
-            </a></li>
-            <li><a href="#" class="nav-link" data-section="motos">
-                <span class="nav-icon">&#9688;</span> Motos
-            </a></li>
-            <li><a href="#" class="nav-link" data-section="gastos">
-                <span class="nav-icon">&#9733;</span> Gastos
-            </a></li>
-            <li><a href="#" class="nav-link" data-section="kanban">
-                <span class="nav-icon">&#9654;</span> Estado
-            </a></li>
-            <li><a href="#" class="nav-link" data-section="ganancias">
-                <span class="nav-icon">&#9650;</span> Ganancias
-            </a></li>
-            <li><a href="#" class="nav-link" data-section="config">
-                <span class="nav-icon">&#9881;</span> Config
-            </a></li>
-        </ul>
-        <div class="sidebar-footer">
-            <button id="btn-export" class="btn btn-outline btn-sm" title="Exportar datos">Exportar JSON</button>
-            <button id="btn-import" class="btn btn-outline btn-sm" title="Importar datos">Importar JSON</button>
-            <input type="file" id="import-file" accept=".json" style="display:none">
-        </div>
-    </nav>
+            <p class="auth-subtitle">Gestion de Flipping de Motos</p>
 
-    <!-- MAIN CONTENT -->
-    <main id="main-content">
-
-        <!-- ==================== DASHBOARD ==================== -->
-        <section id="section-dashboard" class="section active">
-            <div class="section-header">
-                <h1>Dashboard</h1>
-                <p class="section-subtitle">Resumen general del negocio</p>
-            </div>
-
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-value" id="kpi-total-motos">0</div>
-                    <div class="kpi-label">Total Motos</div>
-                </div>
-                <div class="kpi-card kpi-info">
-                    <div class="kpi-value" id="kpi-activas">0</div>
-                    <div class="kpi-label">Motos Activas</div>
-                </div>
-                <div class="kpi-card kpi-success">
-                    <div class="kpi-value" id="kpi-vendidas">0</div>
-                    <div class="kpi-label">Vendidas</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-value" id="kpi-inversion">$0</div>
-                    <div class="kpi-label">Inversion Total</div>
-                </div>
-                <div class="kpi-card kpi-success">
-                    <div class="kpi-value" id="kpi-ganancia">$0</div>
-                    <div class="kpi-label">Ganancia Neta</div>
-                </div>
-                <div class="kpi-card kpi-info">
-                    <div class="kpi-value" id="kpi-roi">0%</div>
-                    <div class="kpi-label">ROI Promedio</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-value" id="kpi-dias-stock">0</div>
-                    <div class="kpi-label">Dias Prom. Stock</div>
-                </div>
-                <div class="kpi-card" id="kpi-flujo-card">
-                    <div class="kpi-value" id="kpi-flujo">$0</div>
-                    <div class="kpi-label">Flujo de Caja</div>
-                </div>
-            </div>
-
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <h3>Inversion por Socio</h3>
-                    <canvas id="chart-inversion-socios"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>ROI por Moto</h3>
-                    <canvas id="chart-roi"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>Estado de Motos</h3>
-                    <canvas id="chart-estados"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>Flujo de Caja</h3>
-                    <canvas id="chart-flujo"></canvas>
-                </div>
-            </div>
-        </section>
-
-        <!-- ==================== MOTOS ==================== -->
-        <section id="section-motos" class="section">
-            <div class="section-header">
-                <h1>Registro de Motos</h1>
-                <button class="btn btn-primary" id="btn-nueva-moto">+ Nueva Moto</button>
-            </div>
-
-            <div class="table-container">
-                <table id="tabla-motos">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Marca</th>
-                            <th>Modelo</th>
-                            <th>Anio</th>
-                            <th>Cilindrada</th>
-                            <th>Precio Compra</th>
-                            <th>Fecha Compra</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-motos"></tbody>
-                </table>
-                <div class="empty-state" id="empty-motos">
-                    <p>No hay motos registradas.</p>
-                    <button class="btn btn-primary" onclick="document.getElementById('btn-nueva-moto').click()">Registrar primera moto</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- ==================== GASTOS ==================== -->
-        <section id="section-gastos" class="section">
-            <div class="section-header">
-                <h1>Seguimiento de Gastos</h1>
-                <button class="btn btn-primary" id="btn-nuevo-gasto">+ Nuevo Gasto</button>
-            </div>
-
-            <div class="filters-bar">
-                <select id="filtro-moto-gastos" class="input-field">
-                    <option value="">Todas las motos</option>
-                </select>
-                <select id="filtro-socio-gastos" class="input-field">
-                    <option value="">Todos los socios</option>
-                </select>
-                <select id="filtro-categoria-gastos" class="input-field">
-                    <option value="">Todas las categorias</option>
-                </select>
-            </div>
-
-            <div class="gastos-resumen" id="gastos-resumen"></div>
-
-            <div class="table-container">
-                <table id="tabla-gastos">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Moto</th>
-                            <th>Categoria</th>
-                            <th>Descripcion</th>
-                            <th>Monto</th>
-                            <th>Pagado por</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-gastos"></tbody>
-                </table>
-                <div class="empty-state" id="empty-gastos">
-                    <p>No hay gastos registrados.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- ==================== KANBAN ==================== -->
-        <section id="section-kanban" class="section">
-            <div class="section-header">
-                <h1>Estado del Proyecto</h1>
-            </div>
-
-            <div class="kanban-board">
-                <div class="kanban-column" data-estado="Desarmado">
-                    <div class="kanban-column-header kanban-desarmado">
-                        <h3>Desarmado</h3>
-                        <span class="kanban-count" id="count-desarmado">0</span>
-                    </div>
-                    <div class="kanban-cards" id="kanban-desarmado"></div>
-                </div>
-                <div class="kanban-column" data-estado="Esperando repuestos">
-                    <div class="kanban-column-header kanban-esperando">
-                        <h3>Esperando Repuestos</h3>
-                        <span class="kanban-count" id="count-esperando">0</span>
-                    </div>
-                    <div class="kanban-cards" id="kanban-esperando"></div>
-                </div>
-                <div class="kanban-column" data-estado="En taller">
-                    <div class="kanban-column-header kanban-taller">
-                        <h3>En Taller</h3>
-                        <span class="kanban-count" id="count-taller">0</span>
-                    </div>
-                    <div class="kanban-cards" id="kanban-taller"></div>
-                </div>
-                <div class="kanban-column" data-estado="Lista para venta">
-                    <div class="kanban-column-header kanban-lista">
-                        <h3>Lista para Venta</h3>
-                        <span class="kanban-count" id="count-lista">0</span>
-                    </div>
-                    <div class="kanban-cards" id="kanban-lista"></div>
-                </div>
-                <div class="kanban-column" data-estado="Vendida">
-                    <div class="kanban-column-header kanban-vendida">
-                        <h3>Vendida</h3>
-                        <span class="kanban-count" id="count-vendida">0</span>
-                    </div>
-                    <div class="kanban-cards" id="kanban-vendida"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ==================== GANANCIAS ==================== -->
-        <section id="section-ganancias" class="section">
-            <div class="section-header">
-                <h1>Calculo de Ganancia y Reparto</h1>
-            </div>
-
-            <div class="reparto-global" id="reparto-global"></div>
-
-            <div class="table-container">
-                <table id="tabla-ganancias">
-                    <thead>
-                        <tr>
-                            <th>Moto</th>
-                            <th>Precio Compra</th>
-                            <th>Gastos Socio A</th>
-                            <th>Gastos Socio B</th>
-                            <th>Inversion Total</th>
-                            <th>Precio Venta</th>
-                            <th>Utilidad Neta</th>
-                            <th>Devol. Socio A</th>
-                            <th>Devol. Socio B</th>
-                            <th>ROI</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-ganancias"></tbody>
-                </table>
-                <div class="empty-state" id="empty-ganancias">
-                    <p>No hay motos vendidas aun.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- ==================== CONFIGURACION ==================== -->
-        <section id="section-config" class="section">
-            <div class="section-header">
-                <h1>Configuracion</h1>
-            </div>
-
-            <div class="config-grid">
-                <div class="config-card">
-                    <h3>Socios</h3>
-                    <div class="form-group">
-                        <label>Nombre Socio A</label>
-                        <input type="text" id="config-socio-a" class="input-field" value="Socio A">
-                    </div>
-                    <div class="form-group">
-                        <label>Nombre Socio B</label>
-                        <input type="text" id="config-socio-b" class="input-field" value="Socio B">
-                    </div>
-                </div>
-                <div class="config-card">
-                    <h3>Reparto de Ganancias</h3>
-                    <div class="form-group">
-                        <label>% Socio A</label>
-                        <input type="number" id="config-pct-a" class="input-field" value="50" min="0" max="100">
-                    </div>
-                    <div class="form-group">
-                        <label>% Socio B</label>
-                        <input type="number" id="config-pct-b" class="input-field" value="50" min="0" max="100">
-                    </div>
-                    <div class="config-validation" id="config-validation"></div>
-                </div>
-                <div class="config-card">
-                    <h3>Categorias de Gasto</h3>
-                    <div id="config-categorias-list"></div>
-                    <div class="form-group form-inline">
-                        <input type="text" id="config-nueva-cat" class="input-field" placeholder="Nueva categoria...">
-                        <button class="btn btn-sm btn-primary" id="btn-agregar-cat">Agregar</button>
-                    </div>
-                </div>
-            </div>
-            <div class="config-actions">
-                <button class="btn btn-primary" id="btn-guardar-config">Guardar Configuracion</button>
-            </div>
-        </section>
-    </main>
-
-    <!-- ==================== MODALS ==================== -->
-
-    <!-- Modal: Nueva Moto -->
-    <div class="modal-overlay" id="modal-moto">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="modal-moto-title">Registrar Nueva Moto</h2>
-                <button class="modal-close" data-close="modal-moto">&times;</button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="moto-edit-id">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Marca *</label>
-                        <input type="text" id="moto-marca" class="input-field" placeholder="Honda, Yamaha...">
-                    </div>
-                    <div class="form-group">
-                        <label>Modelo *</label>
-                        <input type="text" id="moto-modelo" class="input-field" placeholder="CG 150, YBR 125...">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Anio *</label>
-                        <input type="number" id="moto-anio" class="input-field" placeholder="2020" min="1950" max="2030">
-                    </div>
-                    <div class="form-group">
-                        <label>Cilindrada</label>
-                        <input type="text" id="moto-cilindrada" class="input-field" placeholder="150cc">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Precio de Compra ($) *</label>
-                        <input type="number" id="moto-precio" class="input-field" placeholder="500000" min="0" step="100">
-                    </div>
-                    <div class="form-group">
-                        <label>Fecha de Compra *</label>
-                        <input type="date" id="moto-fecha" class="input-field">
-                    </div>
+            <!-- Login Form -->
+            <div id="auth-login" class="auth-form">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="login-email" class="input-field" placeholder="tu@email.com" autocomplete="email">
                 </div>
                 <div class="form-group">
-                    <label>Observaciones</label>
-                    <textarea id="moto-obs" class="input-field" rows="2" placeholder="Notas sobre la moto..."></textarea>
+                    <label>Contrasena</label>
+                    <input type="password" id="login-password" class="input-field" placeholder="Tu contrasena" autocomplete="current-password">
                 </div>
+                <button class="btn btn-primary btn-block" id="btn-login">Iniciar Sesion</button>
+                <p class="auth-switch">No tenes cuenta? <a href="#" id="link-register">Registrate</a></p>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" data-close="modal-moto">Cancelar</button>
-                <button class="btn btn-primary" id="btn-guardar-moto">Registrar</button>
+
+            <!-- Register Form -->
+            <div id="auth-register" class="auth-form" style="display:none">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="register-email" class="input-field" placeholder="tu@email.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label>Contrasena</label>
+                    <input type="password" id="register-password" class="input-field" placeholder="Minimo 6 caracteres" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Contrasena</label>
+                    <input type="password" id="register-password2" class="input-field" placeholder="Repetir contrasena" autocomplete="new-password">
+                </div>
+                <button class="btn btn-primary btn-block" id="btn-register">Crear Cuenta</button>
+                <p class="auth-switch">Ya tenes cuenta? <a href="#" id="link-login">Iniciar Sesion</a></p>
             </div>
+
+            <div id="auth-error" class="auth-error"></div>
         </div>
     </div>
 
-    <!-- Modal: Nuevo Gasto -->
-    <div class="modal-overlay" id="modal-gasto">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Registrar Gasto</h2>
-                <button class="modal-close" data-close="modal-gasto">&times;</button>
+    <!-- ==================== BUSINESS SETUP SCREEN ==================== -->
+    <div id="business-screen" class="auth-screen" style="display:none">
+        <div class="auth-container auth-container-wide">
+            <div class="auth-logo">
+                <span class="logo-icon">&#9881;</span>
+                <span class="auth-title">MotoFlip</span>
             </div>
-            <div class="modal-body">
-                <input type="hidden" id="gasto-edit-id">
-                <div class="form-group">
-                    <label>Moto *</label>
-                    <select id="gasto-moto" class="input-field">
-                        <option value="">Seleccionar moto...</option>
+            <p class="auth-subtitle">Configura tu negocio</p>
+
+            <div class="business-options">
+                <div class="business-option">
+                    <h3>Crear Negocio Nuevo</h3>
+                    <p>Empeza un nuevo negocio y genera un codigo para tu socio</p>
+                    <button class="btn btn-primary btn-block" id="btn-create-business">Crear Negocio</button>
+                </div>
+                <div class="business-option">
+                    <h3>Unirme a un Negocio</h3>
+                    <p>Ingresa el codigo que te paso tu socio</p>
+                    <div class="form-group" style="margin-bottom:12px">
+                        <input type="text" id="join-code" class="input-field join-code-input" placeholder="CODIGO" maxlength="6">
+                    </div>
+                    <button class="btn btn-primary btn-block" id="btn-join-business">Unirme</button>
+                </div>
+            </div>
+
+            <div id="business-error" class="auth-error"></div>
+            <p class="auth-switch"><a href="#" id="link-logout-setup">Cerrar sesion</a></p>
+        </div>
+    </div>
+
+    <!-- ==================== APP CONTAINER ==================== -->
+    <div id="app-container" style="display:none">
+
+        <!-- SIDEBAR -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">&#9881;</span>
+                    <span class="logo-text">MotoFlip</span>
+                </div>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" class="nav-link active" data-section="dashboard">
+                    <span class="nav-icon">&#9632;</span> Dashboard
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="motos">
+                    <span class="nav-icon">&#9688;</span> Motos
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="gastos">
+                    <span class="nav-icon">&#9733;</span> Gastos
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="kanban">
+                    <span class="nav-icon">&#9654;</span> Estado
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="ganancias">
+                    <span class="nav-icon">&#9650;</span> Ganancias
+                </a></li>
+                <li><a href="#" class="nav-link" data-section="config">
+                    <span class="nav-icon">&#9881;</span> Config
+                </a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="user-email" id="user-email"></div>
+                    <div class="negocio-code">Codigo negocio: <strong id="negocio-code-display"></strong></div>
+                </div>
+                <button id="btn-export" class="btn btn-outline btn-sm" title="Exportar datos">Exportar JSON</button>
+                <button id="btn-import" class="btn btn-outline btn-sm" title="Importar datos">Importar JSON</button>
+                <input type="file" id="import-file" accept=".json" style="display:none">
+                <button id="btn-logout" class="btn btn-outline btn-sm btn-logout">Cerrar Sesion</button>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main id="main-content">
+
+            <!-- ==================== DASHBOARD ==================== -->
+            <section id="section-dashboard" class="section active">
+                <div class="section-header">
+                    <h1>Dashboard</h1>
+                    <p class="section-subtitle">Resumen general del negocio</p>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="kpi-total-motos">0</div>
+                        <div class="kpi-label">Total Motos</div>
+                    </div>
+                    <div class="kpi-card kpi-info">
+                        <div class="kpi-value" id="kpi-activas">0</div>
+                        <div class="kpi-label">Motos Activas</div>
+                    </div>
+                    <div class="kpi-card kpi-success">
+                        <div class="kpi-value" id="kpi-vendidas">0</div>
+                        <div class="kpi-label">Vendidas</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="kpi-inversion">$0</div>
+                        <div class="kpi-label">Inversion Total</div>
+                    </div>
+                    <div class="kpi-card kpi-success">
+                        <div class="kpi-value" id="kpi-ganancia">$0</div>
+                        <div class="kpi-label">Ganancia Neta</div>
+                    </div>
+                    <div class="kpi-card kpi-info">
+                        <div class="kpi-value" id="kpi-roi">0%</div>
+                        <div class="kpi-label">ROI Promedio</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value" id="kpi-dias-stock">0</div>
+                        <div class="kpi-label">Dias Prom. Stock</div>
+                    </div>
+                    <div class="kpi-card" id="kpi-flujo-card">
+                        <div class="kpi-value" id="kpi-flujo">$0</div>
+                        <div class="kpi-label">Flujo de Caja</div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Inversion por Socio</h3>
+                        <canvas id="chart-inversion-socios"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>ROI por Moto</h3>
+                        <canvas id="chart-roi"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Estado de Motos</h3>
+                        <canvas id="chart-estados"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Flujo de Caja</h3>
+                        <canvas id="chart-flujo"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== MOTOS ==================== -->
+            <section id="section-motos" class="section">
+                <div class="section-header">
+                    <h1>Registro de Motos</h1>
+                    <button class="btn btn-primary" id="btn-nueva-moto">+ Nueva Moto</button>
+                </div>
+
+                <div class="table-container">
+                    <table id="tabla-motos">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Marca</th>
+                                <th>Modelo</th>
+                                <th>Anio</th>
+                                <th>Cilindrada</th>
+                                <th>Precio Compra</th>
+                                <th>Fecha Compra</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-motos"></tbody>
+                    </table>
+                    <div class="empty-state" id="empty-motos">
+                        <p>No hay motos registradas.</p>
+                        <button class="btn btn-primary" onclick="document.getElementById('btn-nueva-moto').click()">Registrar primera moto</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== GASTOS ==================== -->
+            <section id="section-gastos" class="section">
+                <div class="section-header">
+                    <h1>Seguimiento de Gastos</h1>
+                    <button class="btn btn-primary" id="btn-nuevo-gasto">+ Nuevo Gasto</button>
+                </div>
+
+                <div class="filters-bar">
+                    <select id="filtro-moto-gastos" class="input-field">
+                        <option value="">Todas las motos</option>
+                    </select>
+                    <select id="filtro-socio-gastos" class="input-field">
+                        <option value="">Todos los socios</option>
+                    </select>
+                    <select id="filtro-categoria-gastos" class="input-field">
+                        <option value="">Todas las categorias</option>
                     </select>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Fecha *</label>
-                        <input type="date" id="gasto-fecha" class="input-field">
+
+                <div class="gastos-resumen" id="gastos-resumen"></div>
+
+                <div class="table-container">
+                    <table id="tabla-gastos">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Moto</th>
+                                <th>Categoria</th>
+                                <th>Descripcion</th>
+                                <th>Monto</th>
+                                <th>Pagado por</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-gastos"></tbody>
+                    </table>
+                    <div class="empty-state" id="empty-gastos">
+                        <p>No hay gastos registrados.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== KANBAN ==================== -->
+            <section id="section-kanban" class="section">
+                <div class="section-header">
+                    <h1>Estado del Proyecto</h1>
+                </div>
+
+                <div class="kanban-board">
+                    <div class="kanban-column" data-estado="Desarmado">
+                        <div class="kanban-column-header kanban-desarmado">
+                            <h3>Desarmado</h3>
+                            <span class="kanban-count" id="count-desarmado">0</span>
+                        </div>
+                        <div class="kanban-cards" id="kanban-desarmado"></div>
+                    </div>
+                    <div class="kanban-column" data-estado="Esperando repuestos">
+                        <div class="kanban-column-header kanban-esperando">
+                            <h3>Esperando Repuestos</h3>
+                            <span class="kanban-count" id="count-esperando">0</span>
+                        </div>
+                        <div class="kanban-cards" id="kanban-esperando"></div>
+                    </div>
+                    <div class="kanban-column" data-estado="En taller">
+                        <div class="kanban-column-header kanban-taller">
+                            <h3>En Taller</h3>
+                            <span class="kanban-count" id="count-taller">0</span>
+                        </div>
+                        <div class="kanban-cards" id="kanban-taller"></div>
+                    </div>
+                    <div class="kanban-column" data-estado="Lista para venta">
+                        <div class="kanban-column-header kanban-lista">
+                            <h3>Lista para Venta</h3>
+                            <span class="kanban-count" id="count-lista">0</span>
+                        </div>
+                        <div class="kanban-cards" id="kanban-lista"></div>
+                    </div>
+                    <div class="kanban-column" data-estado="Vendida">
+                        <div class="kanban-column-header kanban-vendida">
+                            <h3>Vendida</h3>
+                            <span class="kanban-count" id="count-vendida">0</span>
+                        </div>
+                        <div class="kanban-cards" id="kanban-vendida"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== GANANCIAS ==================== -->
+            <section id="section-ganancias" class="section">
+                <div class="section-header">
+                    <h1>Calculo de Ganancia y Reparto</h1>
+                </div>
+
+                <div class="reparto-global" id="reparto-global"></div>
+
+                <div class="table-container">
+                    <table id="tabla-ganancias">
+                        <thead>
+                            <tr>
+                                <th>Moto</th>
+                                <th>Precio Compra</th>
+                                <th>Gastos Socio A</th>
+                                <th>Gastos Socio B</th>
+                                <th>Inversion Total</th>
+                                <th>Precio Venta</th>
+                                <th>Utilidad Neta</th>
+                                <th>Devol. Socio A</th>
+                                <th>Devol. Socio B</th>
+                                <th>ROI</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-ganancias"></tbody>
+                    </table>
+                    <div class="empty-state" id="empty-ganancias">
+                        <p>No hay motos vendidas aun.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== CONFIGURACION ==================== -->
+            <section id="section-config" class="section">
+                <div class="section-header">
+                    <h1>Configuracion</h1>
+                </div>
+
+                <div class="config-grid">
+                    <div class="config-card">
+                        <h3>Socios</h3>
+                        <div class="form-group">
+                            <label>Nombre Socio A</label>
+                            <input type="text" id="config-socio-a" class="input-field" value="Socio A">
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre Socio B</label>
+                            <input type="text" id="config-socio-b" class="input-field" value="Socio B">
+                        </div>
+                    </div>
+                    <div class="config-card">
+                        <h3>Reparto de Ganancias</h3>
+                        <div class="form-group">
+                            <label>% Socio A</label>
+                            <input type="number" id="config-pct-a" class="input-field" value="50" min="0" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label>% Socio B</label>
+                            <input type="number" id="config-pct-b" class="input-field" value="50" min="0" max="100">
+                        </div>
+                        <div class="config-validation" id="config-validation"></div>
+                    </div>
+                    <div class="config-card">
+                        <h3>Categorias de Gasto</h3>
+                        <div id="config-categorias-list"></div>
+                        <div class="form-group form-inline">
+                            <input type="text" id="config-nueva-cat" class="input-field" placeholder="Nueva categoria...">
+                            <button class="btn btn-sm btn-primary" id="btn-agregar-cat">Agregar</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="config-actions">
+                    <button class="btn btn-primary" id="btn-guardar-config">Guardar Configuracion</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- ==================== MODALS ==================== -->
+
+        <!-- Modal: Nueva Moto -->
+        <div class="modal-overlay" id="modal-moto">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2 id="modal-moto-title">Registrar Nueva Moto</h2>
+                    <button class="modal-close" data-close="modal-moto">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="moto-edit-id">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Marca *</label>
+                            <input type="text" id="moto-marca" class="input-field" placeholder="Honda, Yamaha...">
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo *</label>
+                            <input type="text" id="moto-modelo" class="input-field" placeholder="CG 150, YBR 125...">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Anio *</label>
+                            <input type="number" id="moto-anio" class="input-field" placeholder="2020" min="1950" max="2030">
+                        </div>
+                        <div class="form-group">
+                            <label>Cilindrada</label>
+                            <input type="text" id="moto-cilindrada" class="input-field" placeholder="150cc">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Precio de Compra ($) *</label>
+                            <input type="number" id="moto-precio" class="input-field" placeholder="500000" min="0" step="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Compra *</label>
+                            <input type="date" id="moto-fecha" class="input-field">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Categoria *</label>
-                        <select id="gasto-categoria" class="input-field">
-                            <option value="">Seleccionar...</option>
+                        <label>Observaciones</label>
+                        <textarea id="moto-obs" class="input-field" rows="2" placeholder="Notas sobre la moto..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" data-close="modal-moto">Cancelar</button>
+                    <button class="btn btn-primary" id="btn-guardar-moto">Registrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Nuevo Gasto -->
+        <div class="modal-overlay" id="modal-gasto">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>Registrar Gasto</h2>
+                    <button class="modal-close" data-close="modal-gasto">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="gasto-edit-id">
+                    <div class="form-group">
+                        <label>Moto *</label>
+                        <select id="gasto-moto" class="input-field">
+                            <option value="">Seleccionar moto...</option>
                         </select>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Descripcion</label>
-                    <input type="text" id="gasto-descripcion" class="input-field" placeholder="Detalle del gasto...">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Monto ($) *</label>
-                        <input type="number" id="gasto-monto" class="input-field" placeholder="15000" min="0" step="100">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Fecha *</label>
+                            <input type="date" id="gasto-fecha" class="input-field">
+                        </div>
+                        <div class="form-group">
+                            <label>Categoria *</label>
+                            <select id="gasto-categoria" class="input-field">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Pagado por *</label>
-                        <select id="gasto-pagado-por" class="input-field">
-                            <option value="">Seleccionar...</option>
+                        <label>Descripcion</label>
+                        <input type="text" id="gasto-descripcion" class="input-field" placeholder="Detalle del gasto...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Monto ($) *</label>
+                            <input type="number" id="gasto-monto" class="input-field" placeholder="15000" min="0" step="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Pagado por *</label>
+                            <select id="gasto-pagado-por" class="input-field">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>N. Comprobante</label>
+                        <input type="text" id="gasto-comprobante" class="input-field" placeholder="Opcional">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" data-close="modal-gasto">Cancelar</button>
+                    <button class="btn btn-primary" id="btn-guardar-gasto">Registrar Gasto</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Registrar Venta -->
+        <div class="modal-overlay" id="modal-venta">
+            <div class="modal">
+                <div class="modal-header">
+                    <h2>Registrar Venta</h2>
+                    <button class="modal-close" data-close="modal-venta">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="venta-resumen" id="venta-resumen"></div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Precio de Venta ($) *</label>
+                            <input type="number" id="venta-precio" class="input-field" placeholder="900000" min="0" step="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Venta *</label>
+                            <input type="date" id="venta-fecha" class="input-field">
+                        </div>
+                    </div>
+                    <input type="hidden" id="venta-moto-id">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" data-close="modal-venta">Cancelar</button>
+                    <button class="btn btn-success" id="btn-confirmar-venta">Confirmar Venta</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Cambiar Estado -->
+        <div class="modal-overlay" id="modal-estado">
+            <div class="modal modal-sm">
+                <div class="modal-header">
+                    <h2>Cambiar Estado</h2>
+                    <button class="modal-close" data-close="modal-estado">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nuevo Estado</label>
+                        <select id="estado-nuevo" class="input-field">
+                            <option value="Desarmado">Desarmado</option>
+                            <option value="Esperando repuestos">Esperando repuestos</option>
+                            <option value="En taller">En taller</option>
+                            <option value="Lista para venta">Lista para venta</option>
                         </select>
                     </div>
+                    <input type="hidden" id="estado-moto-id">
                 </div>
-                <div class="form-group">
-                    <label>N. Comprobante</label>
-                    <input type="text" id="gasto-comprobante" class="input-field" placeholder="Opcional">
+                <div class="modal-footer">
+                    <button class="btn btn-outline" data-close="modal-estado">Cancelar</button>
+                    <button class="btn btn-primary" id="btn-confirmar-estado">Cambiar</button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" data-close="modal-gasto">Cancelar</button>
-                <button class="btn btn-primary" id="btn-guardar-gasto">Registrar Gasto</button>
             </div>
         </div>
-    </div>
 
-    <!-- Modal: Registrar Venta -->
-    <div class="modal-overlay" id="modal-venta">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Registrar Venta</h2>
-                <button class="modal-close" data-close="modal-venta">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="venta-resumen" id="venta-resumen"></div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Precio de Venta ($) *</label>
-                        <input type="number" id="venta-precio" class="input-field" placeholder="900000" min="0" step="100">
-                    </div>
-                    <div class="form-group">
-                        <label>Fecha de Venta *</label>
-                        <input type="date" id="venta-fecha" class="input-field">
-                    </div>
-                </div>
-                <input type="hidden" id="venta-moto-id">
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" data-close="modal-venta">Cancelar</button>
-                <button class="btn btn-success" id="btn-confirmar-venta">Confirmar Venta</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Cambiar Estado -->
-    <div class="modal-overlay" id="modal-estado">
-        <div class="modal modal-sm">
-            <div class="modal-header">
-                <h2>Cambiar Estado</h2>
-                <button class="modal-close" data-close="modal-estado">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Nuevo Estado</label>
-                    <select id="estado-nuevo" class="input-field">
-                        <option value="Desarmado">Desarmado</option>
-                        <option value="Esperando repuestos">Esperando repuestos</option>
-                        <option value="En taller">En taller</option>
-                        <option value="Lista para venta">Lista para venta</option>
-                    </select>
-                </div>
-                <input type="hidden" id="estado-moto-id">
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" data-close="modal-estado">Cancelar</button>
-                <button class="btn btn-primary" id="btn-confirmar-estado">Cambiar</button>
-            </div>
-        </div>
-    </div>
+    </div><!-- /app-container -->
 
     <!-- Toast notifications -->
     <div id="toast-container"></div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+
     <script src="js/data.js"></script>
     <script src="js/charts.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

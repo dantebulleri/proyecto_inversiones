@@ -9,8 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     const navLinks = document.querySelectorAll('.nav-link');
     const sections = document.querySelectorAll('.section');
+    let currentSection = 'dashboard';
 
     function navigateTo(sectionId) {
+        currentSection = sectionId;
         sections.forEach(s => s.classList.remove('active'));
         navLinks.forEach(l => l.classList.remove('active'));
 
@@ -727,11 +729,28 @@ document.addEventListener('DOMContentLoaded', () => {
             DataStore.deleteGasto(gastoId);
             toast('Gasto eliminado');
             refreshGastos();
+        },
+
+        // Called by DataStore on first data load
+        init() {
+            navigateTo('dashboard');
+        },
+
+        // Called by DataStore on real-time updates from other users
+        refreshCurrent() {
+            switch (currentSection) {
+                case 'dashboard': refreshDashboard(); break;
+                case 'motos': refreshMotos(); break;
+                case 'gastos': refreshGastos(); break;
+                case 'kanban': refreshKanban(); break;
+                case 'ganancias': refreshGanancias(); break;
+                case 'config': refreshConfig(); break;
+            }
         }
     };
 
     // ============================================================
-    // INIT
+    // INIT - Start auth flow (app renders when data is ready)
     // ============================================================
-    navigateTo('dashboard');
+    Auth.init();
 });

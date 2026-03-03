@@ -1,9 +1,8 @@
 /* ============================================================
-   DATA LAYER - Persistencia con localStorage
+   DATA LAYER - Persistencia con Firebase Firestore
    ============================================================ */
 
 const DataStore = (() => {
-    const STORAGE_KEY = 'motoflip_data';
 
     const defaultConfig = {
         socioA: 'Socio A',
@@ -21,34 +20,74 @@ const DataStore = (() => {
         nextGastoId: 1
     };
 
-    function load() {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return { ...defaultData, config: { ...defaultConfig } };
-        try {
-            const parsed = JSON.parse(raw);
-            // Merge with defaults for forward-compatibility
-            return {
-                ...defaultData,
-                ...parsed,
-                config: { ...defaultConfig, ...parsed.config }
-            };
-        } catch {
-            return { ...defaultData, config: { ...defaultConfig } };
+    let data = { ...defaultData, config: { ...defaultConfig } };
+    let negocioId = null;
+    let unsubscribe = null;
+
+    function save() {
+        if (negocioId && typeof db !== 'undefined') {
+            db.collection('negocios').doc(negocioId).set({
+                config: data.config,
+                motos: data.motos,
+                gastos: data.gastos,
+                nextMotoId: data.nextMotoId,
+                nextGastoId: data.nextGastoId
+            }, { merge: true }).catch(err => console.error('Error guardando:', err));
         }
     }
 
-    function save(data) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    }
-
-    let data = load();
-
     return {
+        // --- Connection to Firestore ---
+        connect(id) {
+            negocioId = id;
+            if (unsubscribe) unsubscribe();
+
+            let isFirst = true;
+            unsubscribe = db.collection('negocios').doc(id).onSnapshot(doc => {
+                if (doc.exists) {
+                    const remote = doc.data();
+                    data = {
+                        ...defaultData,
+                        config: { ...defaultConfig },
+                        motos: remote.motos || [],
+                        gastos: remote.gastos || [],
+                        nextMotoId: remote.nextMotoId || 1,
+                        nextGastoId: remote.nextGastoId || 1
+                    };
+                    if (remote.config) {
+                        data.config = { ...defaultConfig, ...remote.config };
+                    }
+
+                    if (isFirst) {
+                        isFirst = false;
+                        if (window.App && window.App.init) window.App.init();
+                    } else {
+                        if (window.App && window.App.refreshCurrent) window.App.refreshCurrent();
+                    }
+                }
+            }, err => {
+                console.error('Error en listener Firestore:', err);
+            });
+        },
+
+        disconnect() {
+            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+            negocioId = null;
+            data = { ...defaultData, config: { ...defaultConfig } };
+        },
+
+        getDefaults() {
+            return {
+                ...defaultData,
+                config: { ...defaultConfig }
+            };
+        },
+
         // --- Config ---
         getConfig() { return { ...data.config }; },
         setConfig(config) {
             data.config = { ...config };
-            save(data);
+            save();
         },
 
         // --- Motos ---
@@ -75,7 +114,7 @@ const DataStore = (() => {
                 createdAt: new Date().toISOString()
             };
             data.motos.push(newMoto);
-            save(data);
+            save();
             return newMoto;
         },
 
@@ -83,15 +122,14 @@ const DataStore = (() => {
             const idx = data.motos.findIndex(m => m.id === id);
             if (idx === -1) return null;
             data.motos[idx] = { ...data.motos[idx], ...updates };
-            save(data);
+            save();
             return data.motos[idx];
         },
 
         deleteMoto(id) {
             data.motos = data.motos.filter(m => m.id !== id);
-            // Also delete associated expenses
             data.gastos = data.gastos.filter(g => g.motoId !== id);
-            save(data);
+            save();
         },
 
         cambiarEstado(id, nuevoEstado) {
@@ -99,7 +137,7 @@ const DataStore = (() => {
             if (!moto) return null;
             moto.estado = nuevoEstado;
             moto.historialEstados.push({ estado: nuevoEstado, fecha: new Date().toISOString().split('T')[0] });
-            save(data);
+            save();
             return moto;
         },
 
@@ -110,7 +148,7 @@ const DataStore = (() => {
             moto.fechaVenta = fechaVenta;
             moto.estado = 'Vendida';
             moto.historialEstados.push({ estado: 'Vendida', fecha: fechaVenta });
-            save(data);
+            save();
             return moto;
         },
 
@@ -134,13 +172,13 @@ const DataStore = (() => {
                 createdAt: new Date().toISOString()
             };
             data.gastos.push(newGasto);
-            save(data);
+            save();
             return newGasto;
         },
 
         deleteGasto(id) {
             data.gastos = data.gastos.filter(g => g.id !== id);
-            save(data);
+            save();
         },
 
         // --- Calculos ---
@@ -175,7 +213,6 @@ const DataStore = (() => {
             const pctA = config.pctA / 100;
             const pctB = config.pctB / 100;
 
-            // Devolucion: mitad de compra + gastos propios + % de ganancia
             const devolucionA = (moto.precioCompra / 2) + gastosA + (utilidadNeta * pctA);
             const devolucionB = (moto.precioCompra / 2) + gastosB + (utilidadNeta * pctB);
             const roi = inversionTotal > 0 ? utilidadNeta / inversionTotal : 0;
@@ -224,7 +261,6 @@ const DataStore = (() => {
             totalGastos = data.gastos.reduce((sum, g) => sum + g.monto, 0);
             inversionTotal = totalCompras + totalGastos;
 
-            // ROI promedio de vendidas
             let rois = [];
             let gananciaNeta = 0;
             vendidas.forEach(m => {
@@ -236,14 +272,11 @@ const DataStore = (() => {
             });
             const roiPromedio = rois.length > 0 ? rois.reduce((a, b) => a + b, 0) / rois.length : 0;
 
-            // Dias promedio de stock
             let diasStock = motos.map(m => this.getDiasStock(m.id));
             const diasPromedio = diasStock.length > 0 ? diasStock.reduce((a, b) => a + b, 0) / diasStock.length : 0;
 
-            // Flujo de caja
             const flujoCaja = totalVentas - totalCompras - totalGastos;
 
-            // Inversion por socio
             const invSocioA = data.gastos
                 .filter(g => g.pagadoPor === config.socioA)
                 .reduce((sum, g) => sum + g.monto, 0);
@@ -251,7 +284,6 @@ const DataStore = (() => {
                 .filter(g => g.pagadoPor === config.socioB)
                 .reduce((sum, g) => sum + g.monto, 0);
 
-            // Conteo por estado
             const estados = {
                 'Desarmado': 0,
                 'Esperando repuestos': 0,
@@ -271,17 +303,26 @@ const DataStore = (() => {
 
         // --- Export / Import ---
         exportJSON() {
-            return JSON.stringify(data, null, 2);
+            return JSON.stringify({
+                config: data.config,
+                motos: data.motos,
+                gastos: data.gastos,
+                nextMotoId: data.nextMotoId,
+                nextGastoId: data.nextGastoId
+            }, null, 2);
         },
 
         importJSON(jsonString) {
             const imported = JSON.parse(jsonString);
-            data = { ...defaultData, ...imported, config: { ...defaultConfig, ...imported.config } };
-            save(data);
+            data = {
+                ...defaultData,
+                ...imported,
+                config: { ...defaultConfig, ...(imported.config || {}) }
+            };
+            save();
             return true;
         },
 
-        // --- Mottos activos (no vendidas) para selects ---
         getMotosActivas() {
             return data.motos.filter(m => m.estado !== 'Vendida');
         },
