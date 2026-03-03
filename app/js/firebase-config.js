@@ -16,12 +16,12 @@
    ============================================================ */
 
 const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_PROYECTO.firebaseapp.com",
-    projectId: "TU_PROYECTO",
-    storageBucket: "TU_PROYECTO.firebasestorage.app",
-    messagingSenderId: "TU_SENDER_ID",
-    appId: "TU_APP_ID"
+    apiKey: "AIzaSyCicouXsj6c53UBLDaPjus9dnGP2QOXnR0",
+    authDomain: "moto-flip.firebaseapp.com",
+    projectId: "moto-flip",
+    storageBucket: "moto-flip.firebasestorage.app",
+    messagingSenderId: "260447843449",
+    appId: "1:260447843449:web:6753de1e3b34a5cbaf50a8"
 };
 
 firebase.initializeApp(firebaseConfig);
