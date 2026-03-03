@@ -1,5 +1,5 @@
 /* ============================================================
-   CHARTS - Graficos del Dashboard con Chart.js
+   CHARTS - Graficos del Dashboard con miniChart (sin dependencias)
    ============================================================ */
 
 const Charts = (() => {
@@ -12,64 +12,26 @@ const Charts = (() => {
         }
     }
 
-    function destroyAll() {
-        Object.keys(instances).forEach(destroy);
-    }
-
-    function fmt(n) {
-        return '$' + Math.round(n).toLocaleString('es-AR');
-    }
-
     function renderInversionSocios(kpis) {
-        destroy('inversionSocios');
-        const ctx = document.getElementById('chart-inversion-socios');
-        if (!ctx) return;
-
-        instances.inversionSocios = new Chart(ctx, {
+        destroy('inv');
+        const canvas = document.getElementById('chart-inversion-socios');
+        if (!canvas) return;
+        instances.inv = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: [kpis.config.socioA, kpis.config.socioB],
                 datasets: [{
-                    label: 'Inversion en Gastos',
                     data: [kpis.invSocioA, kpis.invSocioB],
-                    backgroundColor: ['#3b82f6', '#f97316'],
-                    borderRadius: 6,
-                    borderSkipped: false
+                    backgroundColor: ['#3b82f6', '#f97316']
                 }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => fmt(ctx.parsed.y)
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: v => fmt(v),
-                            font: { size: 11 }
-                        },
-                        grid: { color: '#f3f4f6' }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 12, weight: 'bold' } }
-                    }
-                }
             }
         });
     }
 
     function renderROI(kpis) {
         destroy('roi');
-        const ctx = document.getElementById('chart-roi');
-        if (!ctx) return;
+        const canvas = document.getElementById('chart-roi');
+        if (!canvas) return;
 
         const motos = DataStore.getMotos().filter(m => m.precioVenta);
         const labels = [];
@@ -91,144 +53,56 @@ const Charts = (() => {
             colors.push('#d1d5db');
         }
 
-        instances.roi = new Chart(ctx, {
+        instances.roi = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels,
                 datasets: [{
                     label: 'ROI %',
                     data: datos,
-                    backgroundColor: colors,
-                    borderRadius: 6,
-                    borderSkipped: false
+                    backgroundColor: colors
                 }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: { label: ctx => ctx.parsed.y + '%' }
-                    }
-                },
-                scales: {
-                    y: {
-                        ticks: {
-                            callback: v => v + '%',
-                            font: { size: 11 }
-                        },
-                        grid: { color: '#f3f4f6' }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 10 } }
-                    }
-                }
             }
         });
     }
 
     function renderEstados(kpis) {
         destroy('estados');
-        const ctx = document.getElementById('chart-estados');
-        if (!ctx) return;
+        const canvas = document.getElementById('chart-estados');
+        if (!canvas) return;
 
         const labels = Object.keys(kpis.estados);
         const datos = Object.values(kpis.estados);
-        const total = datos.reduce((a, b) => a + b, 0);
 
-        if (total === 0) {
-            // Empty state
-            instances.estados = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Sin datos'],
-                    datasets: [{ data: [1], backgroundColor: ['#e5e7eb'] }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { display: false } }
-                }
-            });
-            return;
-        }
-
-        instances.estados = new Chart(ctx, {
+        instances.estados = new Chart(canvas, {
             type: 'doughnut',
             data: {
                 labels,
                 datasets: [{
                     data: datos,
-                    backgroundColor: [
-                        '#fca5a5', // Desarmado
-                        '#fcd34d', // Esperando
-                        '#93c5fd', // Taller
-                        '#6ee7b7', // Lista
-                        '#d1d5db'  // Vendida
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
+                    backgroundColor: ['#fca5a5', '#fcd34d', '#93c5fd', '#6ee7b7', '#d1d5db']
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                cutout: '55%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { font: { size: 11 }, padding: 12, usePointStyle: true }
-                    }
-                }
-            }
+            options: { cutout: '55%' }
         });
     }
 
     function renderFlujoCaja(kpis) {
-        destroy('flujoCaja');
-        const ctx = document.getElementById('chart-flujo');
-        if (!ctx) return;
+        destroy('flujo');
+        const canvas = document.getElementById('chart-flujo');
+        if (!canvas) return;
 
-        instances.flujoCaja = new Chart(ctx, {
+        instances.flujo = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: ['Ventas', 'Compras', 'Gastos', 'Flujo Neto'],
                 datasets: [{
                     data: [kpis.totalVentas, -kpis.totalCompras, -kpis.totalGastos, kpis.flujoCaja],
                     backgroundColor: [
-                        '#10b981',
-                        '#ef4444',
-                        '#f59e0b',
+                        '#10b981', '#ef4444', '#f59e0b',
                         kpis.flujoCaja >= 0 ? '#3b82f6' : '#ef4444'
-                    ],
-                    borderRadius: 6,
-                    borderSkipped: false
+                    ]
                 }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: { label: ctx => fmt(ctx.parsed.y) }
-                    }
-                },
-                scales: {
-                    y: {
-                        ticks: {
-                            callback: v => fmt(v),
-                            font: { size: 11 }
-                        },
-                        grid: { color: '#f3f4f6' }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 11, weight: 'bold' } }
-                    }
-                }
             }
         });
     }
@@ -239,7 +113,6 @@ const Charts = (() => {
             renderROI(kpis);
             renderEstados(kpis);
             renderFlujoCaja(kpis);
-        },
-        destroyAll
+        }
     };
 })();
