@@ -80,7 +80,7 @@ const Charts = (() => {
                 labels,
                 datasets: [{
                     data: datos,
-                    backgroundColor: ['#fca5a5', '#fcd34d', '#93c5fd', '#6ee7b7', '#d1d5db']
+                    backgroundColor: ['#93c5fd', '#6ee7b7', '#d1d5db']
                 }]
             },
             options: { cutout: '55%' }

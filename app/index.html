@@ -271,36 +271,22 @@
                     <h1>Estado del Proyecto</h1>
                 </div>
 
-                <div class="kanban-board">
-                    <div class="kanban-column" data-estado="Desarmado">
-                        <div class="kanban-column-header kanban-desarmado">
-                            <h3>Desarmado</h3>
-                            <span class="kanban-count" id="count-desarmado">0</span>
+                <div class="kanban-board kanban-3col">
+                    <div class="kanban-column">
+                        <div class="kanban-column-header kanban-reparacion">
+                            <h3>Reparacion</h3>
+                            <span class="kanban-count" id="count-reparacion">0</span>
                         </div>
-                        <div class="kanban-cards" id="kanban-desarmado"></div>
+                        <div class="kanban-cards" id="kanban-reparacion"></div>
                     </div>
-                    <div class="kanban-column" data-estado="Esperando repuestos">
-                        <div class="kanban-column-header kanban-esperando">
-                            <h3>Esperando Repuestos</h3>
-                            <span class="kanban-count" id="count-esperando">0</span>
-                        </div>
-                        <div class="kanban-cards" id="kanban-esperando"></div>
-                    </div>
-                    <div class="kanban-column" data-estado="En taller">
-                        <div class="kanban-column-header kanban-taller">
-                            <h3>En Taller</h3>
-                            <span class="kanban-count" id="count-taller">0</span>
-                        </div>
-                        <div class="kanban-cards" id="kanban-taller"></div>
-                    </div>
-                    <div class="kanban-column" data-estado="Lista para venta">
+                    <div class="kanban-column">
                         <div class="kanban-column-header kanban-lista">
-                            <h3>Lista para Venta</h3>
+                            <h3>Lista para Vender</h3>
                             <span class="kanban-count" id="count-lista">0</span>
                         </div>
                         <div class="kanban-cards" id="kanban-lista"></div>
                     </div>
-                    <div class="kanban-column" data-estado="Vendida">
+                    <div class="kanban-column">
                         <div class="kanban-column-header kanban-vendida">
                             <h3>Vendida</h3>
                             <span class="kanban-count" id="count-vendida">0</span>
@@ -428,6 +414,20 @@
                             <input type="date" id="moto-fecha" class="input-field">
                         </div>
                     </div>
+                    <div class="aporte-section">
+                        <label class="aporte-section-label">Aporte a la compra</label>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>% <span id="label-aporte-a">Socio A</span></label>
+                                <input type="number" id="moto-pct-aporte-a" class="input-field" value="50" min="0" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label>% <span id="label-aporte-b">Socio B</span></label>
+                                <input type="number" id="moto-pct-aporte-b" class="input-field" value="50" disabled>
+                            </div>
+                        </div>
+                        <div class="aporte-preview" id="aporte-preview"></div>
+                    </div>
                     <div class="form-group">
                         <label>Observaciones</label>
                         <textarea id="moto-obs" class="input-field" rows="2" placeholder="Notas sobre la moto..."></textarea>
@@ -534,10 +534,8 @@
                     <div class="form-group">
                         <label>Nuevo Estado</label>
                         <select id="estado-nuevo" class="input-field">
-                            <option value="Desarmado">Desarmado</option>
-                            <option value="Esperando repuestos">Esperando repuestos</option>
-                            <option value="En taller">En taller</option>
-                            <option value="Lista para venta">Lista para venta</option>
+                            <option value="Reparacion">Reparacion</option>
+                            <option value="Lista para vender">Lista para vender</option>
                         </select>
                     </div>
                     <input type="hidden" id="estado-moto-id">

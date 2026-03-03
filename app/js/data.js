@@ -105,12 +105,13 @@ const DataStore = (() => {
                 anio: moto.anio,
                 cilindrada: moto.cilindrada || '',
                 precioCompra: Number(moto.precioCompra),
+                pctAporteA: moto.pctAporteA !== undefined ? Number(moto.pctAporteA) : 50,
                 fechaCompra: moto.fechaCompra,
                 precioVenta: null,
                 fechaVenta: null,
-                estado: 'Desarmado',
+                estado: 'Reparacion',
                 observaciones: moto.observaciones || '',
-                historialEstados: [{ estado: 'Desarmado', fecha: moto.fechaCompra }],
+                historialEstados: [{ estado: 'Reparacion', fecha: moto.fechaCompra }],
                 createdAt: new Date().toISOString()
             };
             data.motos.push(newMoto);
@@ -213,14 +214,19 @@ const DataStore = (() => {
             const pctA = config.pctA / 100;
             const pctB = config.pctB / 100;
 
-            const devolucionA = (moto.precioCompra / 2) + gastosA + (utilidadNeta * pctA);
-            const devolucionB = (moto.precioCompra / 2) + gastosB + (utilidadNeta * pctB);
+            const pctCompraA = moto.pctAporteA !== undefined ? moto.pctAporteA : 50;
+            const aporteCompraA = moto.precioCompra * pctCompraA / 100;
+            const aporteCompraB = moto.precioCompra - aporteCompraA;
+            const devolucionA = aporteCompraA + gastosA + (utilidadNeta * pctA);
+            const devolucionB = aporteCompraB + gastosB + (utilidadNeta * pctB);
             const roi = inversionTotal > 0 ? utilidadNeta / inversionTotal : 0;
 
             return {
                 motoId,
                 motoDesc: moto.marca + ' ' + moto.modelo,
                 precioCompra: moto.precioCompra,
+                aporteCompraA,
+                aporteCompraB,
                 gastosA,
                 gastosB,
                 totalGastos,
@@ -277,21 +283,32 @@ const DataStore = (() => {
 
             const flujoCaja = totalVentas - totalCompras - totalGastos;
 
-            const invSocioA = data.gastos
+            // Inversion por socio: aporte a compras + gastos pagados
+            let invSocioA = data.gastos
                 .filter(g => g.pagadoPor === config.socioA)
                 .reduce((sum, g) => sum + g.monto, 0);
-            const invSocioB = data.gastos
+            let invSocioB = data.gastos
                 .filter(g => g.pagadoPor === config.socioB)
                 .reduce((sum, g) => sum + g.monto, 0);
 
-            const estados = {
-                'Desarmado': 0,
-                'Esperando repuestos': 0,
-                'En taller': 0,
-                'Lista para venta': 0,
-                'Vendida': 0
+            motos.forEach(m => {
+                const pctCA = m.pctAporteA !== undefined ? m.pctAporteA : 50;
+                invSocioA += m.precioCompra * pctCA / 100;
+                invSocioB += m.precioCompra * (100 - pctCA) / 100;
+            });
+
+            // Estados: mapear legacy a los 3 nuevos
+            const estados = { 'Reparacion': 0, 'Lista para vender': 0, 'Vendida': 0 };
+            const stateMap = {
+                'Desarmado': 'Reparacion', 'Esperando repuestos': 'Reparacion',
+                'En taller': 'Reparacion', 'Reparacion': 'Reparacion',
+                'Lista para venta': 'Lista para vender', 'Lista para vender': 'Lista para vender',
+                'Vendida': 'Vendida'
             };
-            motos.forEach(m => { if (estados.hasOwnProperty(m.estado)) estados[m.estado]++; });
+            motos.forEach(m => {
+                const mapped = stateMap[m.estado] || 'Reparacion';
+                estados[mapped]++;
+            });
 
             return {
                 totalMotos, activas, vendidas: vendidas.length,

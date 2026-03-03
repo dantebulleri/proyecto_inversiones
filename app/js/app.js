@@ -67,11 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function estadoBadge(estado) {
         const map = {
-            'Desarmado': 'badge-desarmado',
-            'Esperando repuestos': 'badge-esperando',
-            'En taller': 'badge-taller',
-            'Lista para venta': 'badge-lista',
-            'Vendida': 'badge-vendida'
+            'Reparacion': 'badge-reparacion',
+            'Lista para vender': 'badge-lista',
+            'Vendida': 'badge-vendida',
+            // Legacy
+            'Desarmado': 'badge-reparacion',
+            'Esperando repuestos': 'badge-reparacion',
+            'En taller': 'badge-reparacion',
+            'Lista para venta': 'badge-lista'
         };
         return '<span class="badge ' + (map[estado] || '') + '">' + estado + '</span>';
     }
@@ -168,7 +171,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Nueva moto
+    function updateAportePreview() {
+        const precio = Number(document.getElementById('moto-precio').value) || 0;
+        const pctA = Number(document.getElementById('moto-pct-aporte-a').value) || 0;
+        const pctB = 100 - pctA;
+        document.getElementById('moto-pct-aporte-b').value = pctB;
+        const config = DataStore.getConfig();
+        const preview = document.getElementById('aporte-preview');
+        if (precio > 0) {
+            preview.innerHTML = config.socioA + ': <strong>' + fmt(precio * pctA / 100) + '</strong> &mdash; ' +
+                config.socioB + ': <strong>' + fmt(precio * pctB / 100) + '</strong>';
+        } else {
+            preview.innerHTML = '';
+        }
+    }
+
+    document.getElementById('moto-pct-aporte-a').addEventListener('input', updateAportePreview);
+    document.getElementById('moto-precio').addEventListener('input', updateAportePreview);
+
     document.getElementById('btn-nueva-moto').addEventListener('click', () => {
+        const config = DataStore.getConfig();
         document.getElementById('moto-edit-id').value = '';
         document.getElementById('modal-moto-title').textContent = 'Registrar Nueva Moto';
         document.getElementById('moto-marca').value = '';
@@ -178,6 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('moto-precio').value = '';
         document.getElementById('moto-fecha').value = todayStr();
         document.getElementById('moto-obs').value = '';
+        document.getElementById('moto-pct-aporte-a').value = 50;
+        document.getElementById('moto-pct-aporte-b').value = 50;
+        document.getElementById('label-aporte-a').textContent = config.socioA;
+        document.getElementById('label-aporte-b').textContent = config.socioB;
+        document.getElementById('aporte-preview').innerHTML = '';
         document.getElementById('btn-guardar-moto').textContent = 'Registrar';
         openModal('modal-moto');
     });
@@ -190,16 +217,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const precio = document.getElementById('moto-precio').value;
         const fecha = document.getElementById('moto-fecha').value;
         const obs = document.getElementById('moto-obs').value.trim();
+        const pctAporteA = Number(document.getElementById('moto-pct-aporte-a').value);
 
         if (!marca || !modelo || !anio || !precio || !fecha) {
             toast('Completa todos los campos obligatorios (*)', 'error');
             return;
         }
 
+        if (pctAporteA < 0 || pctAporteA > 100) {
+            toast('El porcentaje de aporte debe estar entre 0 y 100', 'error');
+            return;
+        }
+
         const moto = DataStore.addMoto({
             marca, modelo, anio, cilindrada,
             precioCompra: precio, fechaCompra: fecha,
-            observaciones: obs
+            observaciones: obs, pctAporteA
         });
 
         toast('Moto ' + moto.id + ' registrada: ' + marca + ' ' + modelo);
@@ -358,34 +391,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
     function refreshKanban() {
         const motos = DataStore.getMotos();
-        const config = DataStore.getConfig();
+
+        // Map legacy states to 3 columns
+        const stateMap = {
+            'Desarmado': 'reparacion', 'Esperando repuestos': 'reparacion',
+            'En taller': 'reparacion', 'Reparacion': 'reparacion',
+            'Lista para venta': 'lista', 'Lista para vender': 'lista',
+            'Vendida': 'vendida'
+        };
 
         const columns = {
-            'Desarmado': document.getElementById('kanban-desarmado'),
-            'Esperando repuestos': document.getElementById('kanban-esperando'),
-            'En taller': document.getElementById('kanban-taller'),
-            'Lista para venta': document.getElementById('kanban-lista'),
-            'Vendida': document.getElementById('kanban-vendida')
+            'reparacion': document.getElementById('kanban-reparacion'),
+            'lista': document.getElementById('kanban-lista'),
+            'vendida': document.getElementById('kanban-vendida')
         };
 
-        const counts = {
-            'Desarmado': 0, 'Esperando repuestos': 0,
-            'En taller': 0, 'Lista para venta': 0, 'Vendida': 0
-        };
+        const counts = { 'reparacion': 0, 'lista': 0, 'vendida': 0 };
 
-        // Clear columns
         Object.values(columns).forEach(col => col.innerHTML = '');
 
         motos.forEach(m => {
-            const col = columns[m.estado];
+            const colKey = stateMap[m.estado] || 'reparacion';
+            const col = columns[colKey];
             if (!col) return;
 
-            counts[m.estado]++;
+            counts[colKey]++;
             const dias = DataStore.getDiasStock(m.id);
             const inversion = DataStore.getInversionTotal(m.id);
 
             let actionsHtml = '';
-            if (m.estado !== 'Vendida') {
+            if (colKey !== 'vendida') {
                 actionsHtml =
                     '<div class="kanban-card-actions">' +
                         '<button class="btn btn-sm btn-outline" onclick="App.abrirEstado(\'' + m.id + '\')">Mover</button>' +
@@ -405,12 +440,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 '</div>';
         });
 
-        // Update counts
-        document.getElementById('count-desarmado').textContent = counts['Desarmado'];
-        document.getElementById('count-esperando').textContent = counts['Esperando repuestos'];
-        document.getElementById('count-taller').textContent = counts['En taller'];
-        document.getElementById('count-lista').textContent = counts['Lista para venta'];
-        document.getElementById('count-vendida').textContent = counts['Vendida'];
+        document.getElementById('count-reparacion').textContent = counts['reparacion'];
+        document.getElementById('count-lista').textContent = counts['lista'];
+        document.getElementById('count-vendida').textContent = counts['vendida'];
     }
 
     // Cambiar estado
@@ -465,8 +497,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update table headers with partner names
         const thead = document.querySelector('#tabla-ganancias thead tr');
         const ths = thead.querySelectorAll('th');
-        ths[2].textContent = 'Gastos ' + config.socioA;
-        ths[3].textContent = 'Gastos ' + config.socioB;
+        ths[2].textContent = 'Inv. ' + config.socioA;
+        ths[3].textContent = 'Inv. ' + config.socioB;
         ths[7].textContent = 'Devol. ' + config.socioA;
         ths[8].textContent = 'Devol. ' + config.socioB;
 
@@ -484,10 +516,15 @@ document.addEventListener('DOMContentLoaded', () => {
         motos.forEach(m => {
             const gastosA = DataStore.getGastosSocio(m.id, config.socioA);
             const gastosB = DataStore.getGastosSocio(m.id, config.socioB);
+            const pctCA = m.pctAporteA !== undefined ? m.pctAporteA : 50;
+            const aporteCompraA = m.precioCompra * pctCA / 100;
+            const aporteCompraB = m.precioCompra - aporteCompraA;
+            const invA = aporteCompraA + gastosA;
+            const invB = aporteCompraB + gastosB;
             const invTotal = m.precioCompra + gastosA + gastosB;
 
-            totalInvA += gastosA;
-            totalInvB += gastosB;
+            totalInvA += invA;
+            totalInvB += invB;
 
             if (m.precioVenta) {
                 const calc = DataStore.calcularGanancia(m.id);
@@ -502,8 +539,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     rows.push('<tr>' +
                         '<td><strong>' + m.marca + ' ' + m.modelo + '</strong><br><small>' + m.id + '</small></td>' +
                         '<td>' + fmt(m.precioCompra) + '</td>' +
-                        '<td>' + fmt(gastosA) + '</td>' +
-                        '<td>' + fmt(gastosB) + '</td>' +
+                        '<td>' + fmt(invA) + '</td>' +
+                        '<td>' + fmt(invB) + '</td>' +
                         '<td>' + fmt(invTotal) + '</td>' +
                         '<td>' + fmt(m.precioVenta) + '</td>' +
                         '<td class="' + utilClass + '">' + fmt(calc.utilidadNeta) + '</td>' +
@@ -516,8 +553,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 rows.push('<tr style="opacity:0.6">' +
                     '<td><strong>' + m.marca + ' ' + m.modelo + '</strong><br><small>' + m.id + ' - En proceso</small></td>' +
                     '<td>' + fmt(m.precioCompra) + '</td>' +
-                    '<td>' + fmt(gastosA) + '</td>' +
-                    '<td>' + fmt(gastosB) + '</td>' +
+                    '<td>' + fmt(invA) + '</td>' +
+                    '<td>' + fmt(invB) + '</td>' +
                     '<td>' + fmt(invTotal) + '</td>' +
                     '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>' +
                 '</tr>');
@@ -541,14 +578,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('reparto-global').innerHTML =
             '<div class="reparto-card">' +
                 '<h3>' + config.socioA + '</h3>' +
-                '<div class="reparto-row"><span class="reparto-label">Gastos realizados</span><span class="reparto-value">' + fmt(totalInvA) + '</span></div>' +
+                '<div class="reparto-row"><span class="reparto-label">Inversion total</span><span class="reparto-value">' + fmt(totalInvA) + '</span></div>' +
                 '<div class="reparto-row"><span class="reparto-label">Devolucion inversion</span><span class="reparto-value">' + fmt(totalInvA) + '</span></div>' +
                 '<div class="reparto-row"><span class="reparto-label">Ganancia (' + config.pctA + '%)</span><span class="reparto-value">' + fmt(gananciaA) + '</span></div>' +
                 '<div class="reparto-row total"><span class="reparto-label">Total a recibir</span><span class="reparto-value">' + fmt(totalDevA) + '</span></div>' +
             '</div>' +
             '<div class="reparto-card">' +
                 '<h3>' + config.socioB + '</h3>' +
-                '<div class="reparto-row"><span class="reparto-label">Gastos realizados</span><span class="reparto-value">' + fmt(totalInvB) + '</span></div>' +
+                '<div class="reparto-row"><span class="reparto-label">Inversion total</span><span class="reparto-value">' + fmt(totalInvB) + '</span></div>' +
                 '<div class="reparto-row"><span class="reparto-label">Devolucion inversion</span><span class="reparto-value">' + fmt(totalInvB) + '</span></div>' +
                 '<div class="reparto-row"><span class="reparto-label">Ganancia (' + config.pctB + '%)</span><span class="reparto-value">' + fmt(gananciaB) + '</span></div>' +
                 '<div class="reparto-row total"><span class="reparto-label">Total a recibir</span><span class="reparto-value">' + fmt(totalDevB) + '</span></div>' +
@@ -692,9 +729,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const gastosA = DataStore.getGastosSocio(motoId, config.socioA);
             const gastosB = DataStore.getGastosSocio(motoId, config.socioB);
 
+            const pctCA = moto.pctAporteA !== undefined ? moto.pctAporteA : 50;
+            const aporteCA = moto.precioCompra * pctCA / 100;
+            const aporteCB = moto.precioCompra - aporteCA;
+
             document.getElementById('venta-resumen').innerHTML =
                 '<strong>' + moto.marca + ' ' + moto.modelo + ' (' + moto.id + ')</strong><br><br>' +
-                'Precio compra: ' + fmt(moto.precioCompra) + '<br>' +
+                'Precio compra: ' + fmt(moto.precioCompra) +
+                ' <small>(' + config.socioA + ': ' + fmt(aporteCA) + ' / ' + config.socioB + ': ' + fmt(aporteCB) + ')</small><br>' +
                 'Gastos ' + config.socioA + ': ' + fmt(gastosA) + '<br>' +
                 'Gastos ' + config.socioB + ': ' + fmt(gastosB) + '<br>' +
                 '<strong>Inversion total: ' + fmt(inversion) + '</strong>';
