@@ -28,6 +28,7 @@ class Chart {
     render() {
         const type = this.config.type;
         if (type === 'bar') this._renderBar();
+        else if (type === 'stackedBar') this._renderStackedBar();
         else if (type === 'doughnut' || type === 'pie') this._renderDoughnut();
     }
 
@@ -199,6 +200,111 @@ class Chart {
         this._mouseleaveHandler = () => this.render();
         this.canvas.addEventListener('mousemove', this._mousemoveHandler);
         this.canvas.addEventListener('mouseleave', this._mouseleaveHandler);
+    }
+
+    _renderStackedBar() {
+        const ctx = this.ctx;
+        const W = this.canvas.width;
+        const H = this.canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        const data = this.config.data;
+        const labels = data.labels || [];
+        const datasets = data.datasets || [];
+        if (labels.length === 0 || datasets.length === 0) return;
+
+        const padL = 16, padR = 16, padT = 16, padB = 44, legendH = 28;
+        const chartW = W - padL - padR;
+        const chartH = H - padT - padB - legendH;
+
+        const barW = Math.min((chartW / labels.length) * 0.65, 60);
+        const gap = chartW / labels.length;
+
+        // Each bar is 100% stacked
+        labels.forEach((label, i) => {
+            const vals = datasets.map(ds => (ds.data[i] || 0));
+            const total = vals.reduce((a, b) => a + b, 0);
+            let yOffset = padT;
+
+            vals.forEach((val, di) => {
+                const pct = total > 0 ? val / total : 0;
+                const segH = pct * chartH;
+                const x = padL + gap * i + gap / 2 - barW / 2;
+                const color = datasets[di].backgroundColor || '#3b82f6';
+
+                ctx.fillStyle = color;
+                const r = 3;
+                // Rounded corners only on top of first segment and bottom of last
+                if (di === 0 && segH > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + r, yOffset);
+                    ctx.lineTo(x + barW - r, yOffset);
+                    ctx.quadraticCurveTo(x + barW, yOffset, x + barW, yOffset + r);
+                    ctx.lineTo(x + barW, yOffset + segH);
+                    ctx.lineTo(x, yOffset + segH);
+                    ctx.lineTo(x, yOffset + r);
+                    ctx.quadraticCurveTo(x, yOffset, x + r, yOffset);
+                    ctx.fill();
+                } else if (di === vals.length - 1 && segH > 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, yOffset);
+                    ctx.lineTo(x + barW, yOffset);
+                    ctx.lineTo(x + barW, yOffset + segH - r);
+                    ctx.quadraticCurveTo(x + barW, yOffset + segH, x + barW - r, yOffset + segH);
+                    ctx.lineTo(x + r, yOffset + segH);
+                    ctx.quadraticCurveTo(x, yOffset + segH, x, yOffset + segH - r);
+                    ctx.lineTo(x, yOffset);
+                    ctx.fill();
+                } else if (segH > 0) {
+                    ctx.fillRect(x, yOffset, barW, segH);
+                }
+
+                // Percentage label inside segment if tall enough
+                if (segH > 16) {
+                    const pctText = Math.round(pct * 100) + '%';
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 10px -apple-system, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(pctText, x + barW / 2, yOffset + segH / 2 + 4);
+                }
+
+                yOffset += segH;
+            });
+
+            // X axis label
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '10px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            const maxLabelW = gap - 4;
+            const lbl = (label || '').toString();
+            if (ctx.measureText(lbl).width > maxLabelW) {
+                // Truncate
+                let truncated = lbl;
+                while (truncated.length > 3 && ctx.measureText(truncated + '…').width > maxLabelW) {
+                    truncated = truncated.slice(0, -1);
+                }
+                ctx.fillText(truncated + '…', padL + gap * i + gap / 2, H - padB - legendH + 14);
+            } else {
+                ctx.fillText(lbl, padL + gap * i + gap / 2, H - padB - legendH + 14);
+            }
+        });
+
+        // Legend at bottom
+        const legY = H - legendH - 4;
+        const totalLegW = datasets.reduce((w, ds) => {
+            ctx.font = '11px -apple-system, sans-serif';
+            return w + ctx.measureText(ds.label || '').width + 24;
+        }, 0);
+        let legX = (W - totalLegW) / 2;
+        datasets.forEach(ds => {
+            ctx.fillStyle = ds.backgroundColor || '#3b82f6';
+            ctx.fillRect(legX, legY, 10, 10);
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '11px -apple-system, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(ds.label || '', legX + 14, legY + 9);
+            legX += ctx.measureText(ds.label || '').width + 24;
+        });
     }
 
     _renderDoughnut() {

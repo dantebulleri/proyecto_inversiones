@@ -107,12 +107,53 @@ const Charts = (() => {
         });
     }
 
+    function renderAportePorMoto(kpis) {
+        destroy('aporteMoto');
+        const canvas = document.getElementById('chart-aporte-moto');
+        if (!canvas) return;
+
+        const motos = DataStore.getMotos();
+        const config = kpis.config;
+        const labels = [];
+        const datosA = [];
+        const datosB = [];
+
+        motos.forEach(m => {
+            labels.push(m.marca + ' ' + m.modelo);
+            const pctCA = m.pctAporteA !== undefined ? m.pctAporteA : 50;
+            const aporteCompraA = m.precioCompra * pctCA / 100;
+            const aporteCompraB = m.precioCompra - aporteCompraA;
+            const gastosA = DataStore.getGastosSocio(m.id, config.socioA);
+            const gastosB = DataStore.getGastosSocio(m.id, config.socioB);
+            datosA.push(aporteCompraA + gastosA);
+            datosB.push(aporteCompraB + gastosB);
+        });
+
+        if (labels.length === 0) {
+            labels.push('Sin motos');
+            datosA.push(0);
+            datosB.push(0);
+        }
+
+        instances.aporteMoto = new Chart(canvas, {
+            type: 'stackedBar',
+            data: {
+                labels,
+                datasets: [
+                    { label: config.socioA, data: datosA, backgroundColor: '#3b82f6' },
+                    { label: config.socioB, data: datosB, backgroundColor: '#f97316' }
+                ]
+            }
+        });
+    }
+
     return {
         renderAll(kpis) {
             renderInversionSocios(kpis);
             renderROI(kpis);
             renderEstados(kpis);
             renderFlujoCaja(kpis);
+            renderAportePorMoto(kpis);
         }
     };
 })();
