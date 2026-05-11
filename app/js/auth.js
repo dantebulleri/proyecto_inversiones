@@ -71,7 +71,11 @@ const Auth = (() => {
                     }
                 } catch (err) {
                     console.error('Error verificando usuario:', err);
-                    showError('auth-error', 'Error de conexion. Recarga la pagina.');
+                    if (err.code === 'permission-denied') {
+                        showError('auth-error', 'Error de permisos en la base de datos. Contacta al administrador.');
+                    } else {
+                        showError('auth-error', 'Error de conexion. Recarga la pagina.');
+                    }
                 }
             } else {
                 currentUser = null;
