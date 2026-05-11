@@ -62,20 +62,24 @@ const Auth = (() => {
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
+                showAuthLoading(true);
                 try {
                     const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                    showAuthLoading(false);
                     if (userDoc.exists && userDoc.data().negocioId) {
                         enterApp(user, userDoc.data().negocioId);
                     } else {
                         showBusinessSetup();
                     }
                 } catch (err) {
+                    showAuthLoading(false);
                     console.error('Error verificando usuario:', err);
                     if (err.code === 'permission-denied') {
-                        showError('auth-error', 'Error de permisos en la base de datos. Contacta al administrador.');
+                        showError('auth-error', 'Error de permisos en la base de datos. Las reglas de Firestore estan vencidas. Contacta al administrador para renovarlas en Firebase Console.', true);
                     } else {
-                        showError('auth-error', 'Error de conexion. Recarga la pagina.');
+                        showError('auth-error', 'Error de conexion (' + (err.code || err.message) + '). Recarga la pagina.', true);
                     }
+                    auth.signOut();
                 }
             } else {
                 currentUser = null;
@@ -83,6 +87,23 @@ const Auth = (() => {
                 showLogin();
             }
         });
+    }
+
+    // --- Auth loading state ---
+    function showAuthLoading(loading) {
+        let overlay = document.getElementById('auth-loading-overlay');
+        if (loading) {
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'auth-loading-overlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:9999;';
+                overlay.innerHTML = '<div style="background:#fff;padding:28px 36px;border-radius:12px;text-align:center;font-size:15px;color:#333;">Verificando cuenta...<br><small style="color:#888;font-size:12px;margin-top:6px;display:block;">Conectando con la base de datos</small></div>';
+                document.body.appendChild(overlay);
+            }
+            overlay.style.display = 'flex';
+        } else if (overlay) {
+            overlay.style.display = 'none';
+        }
     }
 
     // --- Screen switching ---
@@ -119,6 +140,8 @@ const Auth = (() => {
     async function login() {
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
+
+        clearErrors();
 
         if (!email || !password) {
             showError('auth-error', 'Completa todos los campos');
@@ -277,11 +300,13 @@ const Auth = (() => {
     }
 
     // --- Helpers ---
-    function showError(elementId, message) {
+    function showError(elementId, message, persist = false) {
         const el = document.getElementById(elementId);
         el.textContent = message;
         el.style.display = 'block';
-        setTimeout(() => { el.style.display = 'none'; }, 5000);
+        if (!persist) {
+            setTimeout(() => { el.style.display = 'none'; }, 7000);
+        }
     }
 
     function clearErrors() {
